@@ -3,14 +3,16 @@
 #include <strings.h>
 #include <windows.h>
 #include <algorithm>
-#include <typeinfo>
+///#include <typeinfo>
 #include <ctime>
 #include <iomanip>
-#include <cstdlib>
+///#include <cstdlib>
 #include <vector>
-#include <bitset>
-#include <stack>
-#include <set>
+///#include <bitset>
+///#include <stack>
+///#include <set>
+#include <list>
+#include <map>
 #include <unordered_map>
 ///79->rosu cu text alb
 ///7->negru cu text alb
@@ -37,11 +39,10 @@ public:
     JocCarti& operator=(const JocCarti& obj);
     friend ostream& operator<<(ostream& out , const JocCarti& obj);
     friend istream& operator>>(istream& in , JocCarti& obj);
-
     vector<pair<string,string>> getPachet()const{return pachet;}
     int size(){return pachet.size();};
     pair<string,string> &operator[](int index){return pachet[index];}
-    virtual pair<string,string> trageCarte();
+    pair<string,string> trageCarte();
     ~JocCarti(){};
 
 };
@@ -64,7 +65,7 @@ private:
     float multi;
 public:
     Pacanea();
-    Pacanea(vector<char>slot,float multi){this->slot = slot;this->multi = multi;}
+    Pacanea(vector<char>slot,float multi,map<string,int>){this->slot = slot;this->multi = multi;}
     Pacanea(const Pacanea& obj){this->slot = obj.slot; this->multi = obj.multi;}
     Pacanea& operator=(const Pacanea& obj);
     char &operator[](int index){return slot[index];}
@@ -73,6 +74,25 @@ public:
     friend ostream& operator<<(ostream& out,const Pacanea& obj);
 
     ~Pacanea(){}
+
+};
+
+class Ruleta{
+private:
+    vector<int> numere;
+    int bila;
+    map<string,int> cote;
+    list<int> prev;
+
+public:
+    Ruleta();
+    Ruleta(vector<int> numere, int bila){this->numere = numere;this->bila = bila;this->cote = cote;this->prev = prev;}
+    Ruleta(const Ruleta& obj){this->numere = obj.numere; this->bila = obj.bila;this->cote = obj.cote;this->prev = obj.prev;}
+    Ruleta& operator=(const Ruleta& obj);
+    int size(){return numere.size();}
+    void setBila(int nr){this->bila = nr;}
+    friend ostream& operator<<(ostream& out , const Ruleta& obj);
+    friend istream& operator>>(istream& in, Ruleta& obj);
 
 };
 
@@ -261,6 +281,79 @@ istream& operator>>(istream& in, Pacanea& obj){
     }
     return in;
 }
+Ruleta::Ruleta(){
+    bila = -1;
+    for(int i = 0 ; i < 36 ; i++)
+        numere.push_back(i);
+    cote["rosie"] = 2;
+    cote["neagra"] = 2;
+    cote["nrExact"] = numere.size();
+    cote["par"] = 2;
+    cote["impar"] = 2;
+    cote["0"] = 14;
+    prev.clear();
+}
+Ruleta& Ruleta::operator=(const Ruleta& obj){
+    if(this != &obj){
+        this->numere = numere;
+        this->bila = bila;
+        this->cote = cote;
+        this->prev = prev;
+    }
+    return *this;
+}
+ostream& operator<<(ostream& out , const Ruleta& obj){
+    HANDLE h;
+    h = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(h,175);
+    out<<obj.numere[0];
+    for(auto it = obj.numere.begin()+1 ; it != obj.numere.end() ; it++){
+        if(*it%2)   SetConsoleTextAttribute(h,79);
+        else        SetConsoleTextAttribute(h,7);
+        out<<*it;
+    }
+    SetConsoleTextAttribute(h,7);
+    out<<'\n';
+    if(obj.bila < 0) out<<"Bila nu a fost inca aruncata!!!\n";
+    if(obj.bila == 0) out<<"O";
+    if(obj.bila < obj.numere.back() && obj.bila > 0){
+        for(int i = 0 ; i < obj.bila ; i++)
+            for(int j = 0 ; j < to_string(i).length() ; j++)
+                out<<" ";
+        out<<"O";
+    }
+    out<<'\n';
+    out<<"Ultimele maini :";
+    if(!obj.prev.empty()){
+        for(auto it = obj.prev.rbegin() ; it != obj.prev.rend() ; it++){
+            if((*it == 0))    SetConsoleTextAttribute(h,175);
+            if(*it % 2)     SetConsoleTextAttribute(h,79);
+            if(!(*it % 2)&& *it)  SetConsoleTextAttribute(h,7);
+            out<<*it<<" ";
+        }
+        SetConsoleTextAttribute(h,7);
+        out<<'\n';
+    }else
+        out<<"Jocul nu a inceput inca!\n";
+
+    out<<"\nCote\n"<<char(196)<<char(196)<<char(196)<<char(196)<<char(196)<<char(196)<<char(196)<<"\n";
+    for(auto it = obj.cote.begin() ; it != obj.cote.end() ; it++)
+        out<<it->first<<"->x"<<it->second<<'\n';
+
+    return out;
+}
+istream& operator>>(istream& in,Ruleta& obj){
+    obj.numere.clear();
+    int x;
+    cout<<"Cate numere sa aibe?\n";
+    in>>x;
+    for(int i = 0 ; i < x ; i++)
+        obj.numere.push_back(i);
+    obj.bila = -1;
+    obj.cote["nrExact"] = obj.size();
+    return in;
+}
+
 
 
 template<typename T> ///sa supraincarci size pt toate si []
@@ -276,6 +369,10 @@ void amesteca(T& joc){
         joc[idk] = aux[i];
         v[idk] = 1;
         }
+}
+void amesteca(Ruleta& obj){
+    srand(time(nullptr));
+    obj.setBila(rand() % obj.size());
 }
 
 /*
@@ -370,5 +467,7 @@ int main()
     Pacanea paca;
     Casino c;
     BlackJack b,r;
+    Ruleta rul; ///push_back si pop_front
 
+    cout<<rul;
 }
